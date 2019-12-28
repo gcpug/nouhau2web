@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+
+	"github.com/k0kubun/pp"
 )
 
 func main() {
@@ -13,11 +14,12 @@ func main() {
 	flag.Parse()
 	fmt.Println(*dir)
 
-	fi, err := ioutil.ReadDir(*dir)
+	l, err := ListFiles(*dir)
 	if err != nil {
-		fmt.Printf("failed read dir : %+v", err)
+		fmt.Printf("failed list files... %+v\n", err)
 	}
-	for _, f := range fi {
-		fmt.Println(f.Name())
+	_, err = pp.Println(l)
+	if err != nil {
+		fmt.Printf("failed k0kubun pp... %+v\n", err)
 	}
 }
