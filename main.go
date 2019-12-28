@@ -8,14 +8,10 @@ import (
 
 func main() {
 	var (
-		dir = flag.String("dir", "default", "string flag")
+		dir = flag.String("dir", ".", "target file path")
 	)
 	flag.Parse()
 	fmt.Println(*dir)
-
-	if *dir == "" {
-		*dir = "."
-	}
 
 	fi, err := ioutil.ReadDir(*dir)
 	if err != nil {
