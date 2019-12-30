@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/russross/blackfriday"
 )
 
 type Converter struct {
@@ -19,7 +22,7 @@ func NewConverter(gcs *StorageService) *Converter {
 func (c *Converter) Run(ctx context.Context, bucket string, fl *FileList) error {
 	for _, fn := range fl.CurrentFileList {
 		lfp := fmt.Sprintf("%s/%s", fl.Dir, fn)
-		if err := c.LocalToGCS(ctx, lfp, bucket, fn); err != nil {
+		if err := c.Process(ctx, lfp, bucket, fn); err != nil {
 			return err
 		}
 	}
@@ -32,7 +35,61 @@ func (c *Converter) Run(ctx context.Context, bucket string, fl *FileList) error 
 	return nil
 }
 
-func (c *Converter) LocalToGCS(ctx context.Context, localFilePath string, bucket string, object string) (rerr error) {
+func (c *Converter) MarkdownToHTML(md []byte) []byte {
+	return blackfriday.Run(md)
+}
+
+func (c *Converter) Process(ctx context.Context, localFilePath string, bucket string, object string) error {
+	ext, ct := c.ContentType(object)
+	if ext == "MD" {
+		if err := c.MarkdownToGCS(ctx, localFilePath, bucket, object); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err := c.LocalToGCS(ctx, localFilePath, bucket, object, ct); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Converter) MarkdownToGCS(ctx context.Context, localFilePath string, bucket string, object string) (rerr error) {
+	html, err := c.readMarkdownFileToHTML(localFilePath)
+	if err != nil {
+		return err
+	}
+
+	gcsw := c.gcs.NewWriter(ctx, bucket, object)
+	defer func() {
+		if err := gcsw.Close(); err != nil {
+			rerr = err
+		}
+	}()
+	gcsw.ObjectAttrs.ContentType = "text/html;charset=utf-8"
+	gcsw.ObjectAttrs.ContentDisposition = fmt.Sprintf(`attachment;filename="%v"`, object)
+	_, err = gcsw.Write(html)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Converter) readMarkdownFileToHTML(localFilePath string) ([]byte, error) {
+	f, err := os.Open(localFilePath)
+	if err != nil {
+		return nil, err
+	}
+	md, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	return c.MarkdownToHTML(md), nil
+}
+
+func (c *Converter) LocalToGCS(ctx context.Context, localFilePath string, bucket string, object string, contentType string) (rerr error) {
 	f, err := os.Open(localFilePath)
 	if err != nil {
 		return err
@@ -45,19 +102,17 @@ func (c *Converter) LocalToGCS(ctx context.Context, localFilePath string, bucket
 		}
 	}()
 
-	gcsw.ObjectAttrs.ContentType = c.ContentType(object)
+	gcsw.ObjectAttrs.ContentType = contentType
 	gcsw.ObjectAttrs.ContentDisposition = fmt.Sprintf(`attachment;filename="%v"`, object)
 	_, err = io.Copy(gcsw, f)
 	if err != nil {
 		return err
 	}
-
-	return nil
 }
 
-// Extension is 拡張子からContentTypeを指定する
-func (c *Converter) ContentType(fileName string) string {
-	ext := filepath.Ext(fileName)
+// ContentType is ファイル名から拡張子とContentTypeを返す
+func (c *Converter) ContentType(fileName string) (ext string, contentType string) {
+	ext = filepath.Ext(fileName)
 
 	ct := ""
 	switch ext {
@@ -85,5 +140,5 @@ func (c *Converter) ContentType(fileName string) string {
 		ct = "image/x-icon"
 	}
 
-	return ct
+	return ext, ct
 }

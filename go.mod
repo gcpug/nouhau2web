@@ -7,4 +7,6 @@ require (
 	cloud.google.com/go/storage v1.0.0
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/mattn/go-colorable v0.1.4 // indirect
+	github.com/russross/blackfriday v2.0.0+incompatible // indirect
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 )
