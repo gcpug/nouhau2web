@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -78,7 +77,6 @@ func (c *Converter) MarkdownToGCS(ctx context.Context, localFilePath string, buc
 		}
 	}()
 	gcsw.ObjectAttrs.ContentType = "text/html;charset=utf-8"
-	gcsw.ObjectAttrs.ContentDisposition = fmt.Sprintf(`attachment;filename="%v"`, c.extMDToHTML(object))
 	_, err = gcsw.Write(html)
 	if err != nil {
 		return err
@@ -113,7 +111,6 @@ func (c *Converter) LocalToGCS(ctx context.Context, localFilePath string, bucket
 	}()
 
 	gcsw.ObjectAttrs.ContentType = contentType
-	gcsw.ObjectAttrs.ContentDisposition = fmt.Sprintf(`attachment;filename="%v"`, object)
 	_, err = io.Copy(gcsw, f)
 	if err != nil {
 		return err
