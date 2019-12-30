@@ -18,7 +18,7 @@ func TestConverter_LocalToGCS(t *testing.T) {
 	fn := "README.md"
 	lfp := "/Users/sinmetal/go/src/github.com/gcpug/nouhau2web/README.md"
 
-	if err := c.LocalToGCS(ctx, lfp, "gcpug-nouhau-test", fn); err != nil {
+	if err := c.Process(ctx, lfp, "gcpug-nouhau-test", fn); err != nil {
 		t.Fatal(err)
 	}
 }
