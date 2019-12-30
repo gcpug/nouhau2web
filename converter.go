@@ -24,16 +24,21 @@ func NewConverter(gcs *StorageService, root string) *Converter {
 	}
 }
 
-func (c *Converter) Run(ctx context.Context, bucket string, fl *FileList) error {
+func (c *Converter) Run(ctx context.Context, bucket string, fl *FileList, parent []string) error {
+	var current = parent
+	current = append(current, fl.Dir)
+
 	for _, fn := range fl.CurrentFileList {
-		lfp := fmt.Sprintf("%s/%s", fl.Dir, fn)
+		fp := current
+		fp = append(fp, fn)
+		lfp := strings.Join(fp, "/")
 		if err := c.Process(ctx, lfp, bucket, fn); err != nil {
 			return err
 		}
 	}
 
 	for _, ufl := range fl.UnderFileList {
-		if err := c.Run(ctx, bucket, ufl); err != nil {
+		if err := c.Run(ctx, bucket, ufl, current); err != nil {
 			return err
 		}
 	}

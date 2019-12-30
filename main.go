@@ -31,7 +31,7 @@ func main() {
 	}
 
 	c := NewConverter(gcs, *dir)
-	if err := c.Run(ctx, *bucket, l); err != nil {
+	if err := c.Run(ctx, *bucket, l, []string{}); err != nil {
 		fmt.Printf("failed Converter.Run... %+v\n", err)
 		os.Exit(1)
 	}
