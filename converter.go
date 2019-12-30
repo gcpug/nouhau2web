@@ -78,7 +78,7 @@ func (c *Converter) MarkdownToGCS(ctx context.Context, localFilePath string, buc
 		}
 	}()
 	gcsw.ObjectAttrs.ContentType = "text/html;charset=utf-8"
-	gcsw.ObjectAttrs.ContentDisposition = fmt.Sprintf(`attachment;filename="%v"`, object)
+	gcsw.ObjectAttrs.ContentDisposition = fmt.Sprintf(`attachment;filename="%v"`, c.extMDToHTML(object))
 	_, err = gcsw.Write(html)
 	if err != nil {
 		return err
@@ -163,9 +163,14 @@ func (c *Converter) ObjectPath(localFilePath string) string {
 	if strings.HasPrefix(ret, "/") {
 		ret = ret[1:]
 	}
-	if strings.HasSuffix(strings.ToLower(ret), ".md") {
-		ret = ret[:len(ret)-3] + ".html"
-	}
+	ret = c.extMDToHTML(ret)
 
 	return ret
+}
+
+func (c *Converter) extMDToHTML(filePath string) string {
+	if strings.HasSuffix(strings.ToLower(filePath), ".md") {
+		filePath = filePath[:len(filePath)-3] + ".html"
+	}
+	return filePath
 }
