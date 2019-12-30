@@ -7,16 +7,21 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/russross/blackfriday"
 )
 
 type Converter struct {
-	gcs *StorageService
+	root string
+	gcs  *StorageService
 }
 
-func NewConverter(gcs *StorageService) *Converter {
-	return &Converter{gcs: gcs}
+func NewConverter(gcs *StorageService, root string) *Converter {
+	return &Converter{
+		root: root,
+		gcs:  gcs,
+	}
 }
 
 func (c *Converter) Run(ctx context.Context, bucket string, fl *FileList) error {
@@ -41,7 +46,7 @@ func (c *Converter) MarkdownToHTML(md []byte) []byte {
 
 func (c *Converter) Process(ctx context.Context, localFilePath string, bucket string, object string) error {
 	ext, ct := c.ContentType(object)
-	if ext == "MD" {
+	if ext == ".MD" {
 		if err := c.MarkdownToGCS(ctx, localFilePath, bucket, object); err != nil {
 			return err
 		}
@@ -61,7 +66,7 @@ func (c *Converter) MarkdownToGCS(ctx context.Context, localFilePath string, buc
 		return err
 	}
 
-	gcsw := c.gcs.NewWriter(ctx, bucket, object)
+	gcsw := c.gcs.NewWriter(ctx, bucket, c.ObjectPath(localFilePath))
 	defer func() {
 		if err := gcsw.Close(); err != nil {
 			rerr = err
@@ -95,7 +100,7 @@ func (c *Converter) LocalToGCS(ctx context.Context, localFilePath string, bucket
 		return err
 	}
 
-	gcsw := c.gcs.NewWriter(ctx, bucket, object)
+	gcsw := c.gcs.NewWriter(ctx, bucket, c.ObjectPath(localFilePath))
 	defer func() {
 		if err := gcsw.Close(); err != nil {
 			rerr = err
@@ -143,4 +148,19 @@ func (c *Converter) ContentType(fileName string) (ext string, contentType string
 	}
 
 	return ext, ct
+}
+
+func (c *Converter) ObjectPath(localFilePath string) string {
+	ret := localFilePath
+	if strings.HasPrefix(localFilePath, c.root) {
+		ret = localFilePath[len(c.root):]
+	}
+	if strings.HasPrefix(ret, "/") {
+		ret = ret[1:]
+	}
+	if strings.HasSuffix(ret, ".MD") {
+		ret = ret[:len(ret)-3] + ".html"
+	}
+
+	return ret
 }

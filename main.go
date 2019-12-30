@@ -30,7 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	c := NewConverter(gcs)
+	c := NewConverter(gcs, *dir)
 	if err := c.Run(ctx, *bucket, l); err != nil {
 		fmt.Printf("failed Converter.Run... %+v\n", err)
 		os.Exit(1)
