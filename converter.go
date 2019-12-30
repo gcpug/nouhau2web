@@ -51,7 +51,7 @@ func (c *Converter) MarkdownToHTML(md []byte) []byte {
 
 func (c *Converter) Process(ctx context.Context, localFilePath string, bucket string, object string) error {
 	ext, ct := c.ContentType(object)
-	if ext == ".MD" {
+	if ext == ".md" {
 		if err := c.MarkdownToGCS(ctx, localFilePath, bucket, object); err != nil {
 			return err
 		}
@@ -152,7 +152,7 @@ func (c *Converter) ContentType(fileName string) (ext string, contentType string
 		ct = "image/x-icon"
 	}
 
-	return ext, ct
+	return strings.ToLower(ext), ct
 }
 
 func (c *Converter) ObjectPath(localFilePath string) string {
@@ -163,7 +163,7 @@ func (c *Converter) ObjectPath(localFilePath string) string {
 	if strings.HasPrefix(ret, "/") {
 		ret = ret[1:]
 	}
-	if strings.HasSuffix(ret, ".MD") {
+	if strings.HasSuffix(strings.ToLower(ret), ".md") {
 		ret = ret[:len(ret)-3] + ".html"
 	}
 

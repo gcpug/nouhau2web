@@ -22,7 +22,7 @@ func TestConverter_ContentType(t *testing.T) {
 	c := newConverter(t)
 
 	ext, _ := c.ContentType("hoge.MD")
-	if e, g := ".MD", ext; e != g {
+	if e, g := ".md", ext; e != g {
 		t.Errorf("Ext want %v got %v", e, g)
 	}
 }
